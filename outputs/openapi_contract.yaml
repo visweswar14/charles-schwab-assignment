@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: Scalable URL Shortener API
+  version: 1.0.0
+  description: High-performance URL shortener service with sub-50ms latency, Base62 encoding, and click/timestamp analytics using Python and SQLite.
+servers:
+  - url: http://localhost:8000/api/v1
+paths:
+  /shorten:
+    post:
+      summary: Create a short URL
+      operationId: createShortUrl
+      requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UrlCreateRequest'
+      responses:
+        '201':
+          description: Short URL created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlResponse'
+        '400':
+          description: Invalid URL provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /{short_code}:
+    get:
+      summary: Redirect to original URL
+      operationId: redirectToUrl
+      parameters:
+        - name: short_code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Base62 encoded short code
+      responses:
+        '302':
+          description: Redirect to the original URL via Location header
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: The target original URL
+        '404':
+          description: Short URL not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /analytics/{short_code}:
+    get:
+      summary: Get click and timestamp analytics for a short URL
+      operationId: getAnalytics
+      parameters:
+        - name: short_code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Base62 encoded short code
+      responses:
+        '200':
+          description: Analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsResponse'
+        '404':
+          description: Short URL not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    UrlCreateRequest:
+      type: object
+      required:
+        - original_url
+      properties:
+        original_url:
+          type: string
+          format: uri
+          example: https://www.example.com/very/long/path?query=1
+    UrlResponse:
+      type: object
+      required:
+        - short_code
+        - short_url
+        - original_url
+        - created_at
+      properties:
+        short_code:
+          type: string
+          example: 1AbZ9
+        short_url:
+          type: string
+          format: uri
+          example: http://localhost:8000/api/v1/1AbZ9
+        original_url:
+          type: string
+          format: uri
+          example: https://www.example.com/very/long/path?query=1
+        created_at:
+          type: string
+          format: date-time
+          example: '2023-10-27T10:00:00Z'
+    ClickEvent:
+      type: object
+      required:
+        - timestamp
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: '2023-10-27T10:05:30Z'
+        ip_address:
+          type: string
+          nullable: true
+          example: 192.168.1.1
+        user_agent:
+          type: string
+          nullable: true
+          example: Mozilla/5.0
+    AnalyticsResponse:
+      type: object
+      required:
+        - short_code
+        - total_clicks
+        - clicks
+      properties:
+        short_code:
+          type: string
+          example: 1AbZ9
+        total_clicks:
+          type: integer
+          example: 42
+        clicks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClickEvent'
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: The requested short code does not exist.
