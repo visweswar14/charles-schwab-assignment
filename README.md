@@ -125,6 +125,8 @@ Run the generated `pytest` suite against the produced URL shortener module:
 ```bash
 python -m pytest outputs/test_url_shortener.py -v
 ```
+To test or create the shorted urls:
+run "python demo.py" and provide the full url details
 
 *Note: Depending on prompt specificity, the QA agent dynamically generates 6–8 unit, edge-case, and latency tests—all verified 100% green in the isolated sandbox (see `outputs/pytest_report.txt` for the saved local test execution log).*
 
